@@ -8,7 +8,7 @@ def googleSearch(sourceName, cryptoName, numberOfResultsToCrawl):
     try:
         query = f"site:{sourceName} {cryptoName}"
         search_url = f"https://www.google.com/search?q={query.replace(' ', '+')}&num={numberOfResultsToCrawl}"
-        print(search_url)
+        #print(search_url)
         headers = {
             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
         }
@@ -20,7 +20,7 @@ def googleSearch(sourceName, cryptoName, numberOfResultsToCrawl):
         links = []
         
         for item in soup.find_all('a', href=True):
-            print('\n' + str(item) + '\n')
+            #print('\n' + str(item) + '\n')
             href = item['href']
             if href.startswith("https://")  and "google.com" not in href and "/search" not in href:
                 if href not in uniqueLinks:

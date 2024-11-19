@@ -72,7 +72,11 @@ def googleSearch(sourceName, cryptoName, numberOfResultsToCrawl):
 # Calling googleSearch function by different threads
 def asyncGoogleSearch(sourceName, cryptoName, numberOfResultsToCrawl):
     return executor.submit(googleSearch, sourceName, cryptoName, numberOfResultsToCrawl)
-    
+
+@app.route("/", methods=['GET'])
+def hello_world():
+    return "<p>Hello, World!</p>"
+
 @app.route('/crawl', methods=['GET'])
 def crawl():
     try:

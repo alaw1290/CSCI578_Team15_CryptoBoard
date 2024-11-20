@@ -54,6 +54,7 @@ def googleSearch(sourceName, cryptoName, numberOfResultsToCrawl):
                         try:
                             cursor.execute("INSERT INTO STORED_URLS (CRYPTO_NAME, SOURCE, URL) VALUES (%s, %s, %s);", (cryptoName, sourceName, href))
                             conn.commit()
+                            print(f"{len(links)} - {href} have been stored.")
                         except Exception as e:
                             conn.rollback()
                             print(f"An error occurred: {e}")

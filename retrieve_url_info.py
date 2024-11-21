@@ -3,6 +3,9 @@ import os
 import requests
 from bs4 import BeautifulSoup
 from datetime import datetime
+import random
+import time
+from dateutil import parser
 
 
 # Function to load environment variables from the .env file
@@ -28,8 +31,75 @@ conn = psycopg2.connect(
 cursor = conn.cursor()
 
 
-import random
-import time
+def extract_summary_from_meta(soup):
+    """Extract summary from various metadata tags."""
+    meta_tags = [
+        {"name": "description"},  # Common description tag
+        {"property": "og:description"},  # OpenGraph description
+        {"property": "twitter:description"},  # Twitter card description
+        {"name": "summary"},  # Less common but possible
+    ]
+    for tag in meta_tags:
+        meta = soup.find("meta", tag)
+        if meta and meta.get("content"):
+            return meta.get("content").strip()
+    return None
+
+
+def extract_summary_from_paragraphs(soup):
+    """Extract the first meaningful paragraph as a summary."""
+    for paragraph in soup.find_all("p"):
+        text = paragraph.get_text(strip=True)
+        if text:  # Check if the paragraph is not empty
+            return text
+    return None
+
+
+def extract_summary_with_headings(soup):
+    """Combine the main heading and first paragraph for a fallback summary."""
+    heading = soup.find("h1").get_text(strip=True) if soup.find("h1") else None
+    first_paragraph = extract_summary_from_paragraphs(soup)
+    if heading and first_paragraph:
+        return f"{heading} - {first_paragraph}"
+    return heading or first_paragraph
+
+
+def extract_published_date(soup):
+    """Attempts to extract published date from various meta tags."""
+    possible_tags = [
+        "article:published_time", "og:published_time",
+        "datePublished", "publish_date", "pub_date", "date"
+    ]
+    for meta in soup.find_all("meta"):
+        if meta.get("property") in possible_tags or meta.get("name") in possible_tags:
+            date_str = meta.get("content")
+            if date_str:
+                try:
+                    return parser.parse(date_str)
+                except ValueError:
+                    continue
+    return None
+
+
+def extract_summary(soup):
+    summary = extract_summary_from_meta(soup)
+    if summary:
+        print("Summary extracted from metadata.")
+        return summary
+
+    summary = extract_summary_from_paragraphs(soup)
+    if summary:
+        print("Summary extracted from the first paragraph.")
+        return summary
+
+    summary = extract_summary_with_headings(soup)
+    if summary:
+        print("Summary extracted using headings.")
+        return summary
+
+    print("No summary found.")
+    return "Summary not available."
+
 
 def fetch_url_details(url):
     """Retrieve title, published date, and summary from an HTML page."""
@@ -53,32 +123,21 @@ def fetch_url_details(url):
         soup = BeautifulSoup(response.text, "html.parser")
 
         # Extract the title
-        title = soup.title.string if soup.title else None
+        title = soup.title.string.strip() if soup.title else None
 
-        # Extract the published date from meta tags (if available)
-        published_date = None
-        for meta in soup.find_all("meta"):
-            if meta.get("property") in ["article:published_time", "og:published_time"]:
-                published_date = meta.get("content")
-                break
-        if published_date:
-            try:
-                published_date = datetime.fromisoformat(published_date)
-            except ValueError:
-                published_date = None
+        # Extract the published date using the previously added robust function
+        published_date = extract_published_date(soup)
 
-        # Extract summary based on the "summary:" keyword
-        summary = None
-        for p in soup.find_all("p"):
-            if "summary:" in p.get_text().lower():
-                summary = p.get_text().split("summary:", 1)[1].strip()
-                break
+        # Extract the summary using the combined strategy
+        summary = extract_summary(soup)
 
         return title, published_date, summary
 
     except requests.RequestException as e:
         print(f"Request error for URL {url}: {e}")
         return None, None, None
+
+
 # def fetch_url_details(url):
 #     """Retrieve title, published date, and summary from an HTML page."""
 #     try:
@@ -127,7 +186,7 @@ def fetch_url_details(url):
 def update_url_info():
     """Fetch URLs from the database, retrieve HTML content info, and update the database."""
     # Fetch URLs that need information (e.g., where title is NULL)
-    cursor.execute("SELECT id, url FROM STORED_URLS WHERE title IS NULL;")
+    cursor.execute("SELECT id, url FROM STORED_URLS WHERE published_date IS NULL;")
     urls = cursor.fetchall()
 
     for url_id, url in urls:

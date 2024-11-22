@@ -87,10 +87,13 @@ def test_db_conn():
     connection = create_connection()
     cursor = connection.cursor()
 
-    cursor.execute("SELECT * from coinmarket_id_map;")
-
     # Fetch all rows from database
+    cursor.execute("SELECT * from coinmarket_id_map;")
     records = cursor.fetchall()
+
+    cursor.close()
+    connection.close()
+    
     return str(records)
 
 

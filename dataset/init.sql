@@ -1,8 +1,10 @@
-CREATE TABLE inflation_data (
-    RegionalMember TEXT,
-    Year INT,
-    Inflation DECIMAL,
-    Unit_of_Measurement TEXT,
-    Subregion TEXT,
-    Country_Code TEXT
+CREATE TABLE coinmarket_id_map (
+    ID Int,
+    Name TEXT,
+    Symbol TEXT
 );
+
+COPY coinmarket_id_map
+FROM '/docker-entrypoint-initdb.d/coinmarket_id_map.csv'
+DELIMITER ','
+CSV HEADER;

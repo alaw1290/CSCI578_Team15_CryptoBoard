@@ -9,8 +9,6 @@ pip3 install bs4
 
 # 2. Create a .env file with the attributes below:
 
-# Database configuration
-
 DB_NAME=cryptoboard
 DB_USER=cryptoboard_owner
 DB_PASSWORD=PASSWORD
@@ -19,6 +17,7 @@ DB_SSLMODE=require
 DB_SSLROOTCERT=/path/to/root.crt
 
 # 3. Run:
+
 python3 app.py
 http://127.0.0.1:8000/crawl?sourceName=nytimes.com&cryptoName=Bitcoin&number=30
 

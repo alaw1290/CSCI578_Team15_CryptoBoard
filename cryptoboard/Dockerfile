@@ -2,7 +2,7 @@
 FROM python:3.10-alpine
 
 # set work directory
-WORKDIR /usr/src/app
+WORKDIR /usr/src/cryptoboard
 
 # set environment variables
 ENV FLASK_APP=app.py
@@ -13,11 +13,11 @@ RUN apk update && apk add postgresql-dev gcc python3-dev musl-dev
 
 # install dependencies
 RUN pip install --upgrade pip
-COPY ./requirements.txt /usr/src/app/requirements.txt
+COPY ./requirements.txt /usr/src/cryptoboard/requirements.txt
 RUN export LDFLAGS="-L/usr/local/opt/openssl/lib"
 RUN pip install -r requirements.txt
 
 # copy project
-COPY . /usr/src/app/
+COPY . /usr/src/cryptoboard/
 EXPOSE 8000
 CMD ["flask", "run"]

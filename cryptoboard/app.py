@@ -3,6 +3,9 @@ from bs4 import BeautifulSoup
 from concurrent.futures import ThreadPoolExecutor
 import requests, os, psycopg2
 
+from db_connector import create_connection
+
+
 app = Flask(__name__)
 # multi threading 
 executor = ThreadPoolExecutor(max_workers=5)
@@ -77,6 +80,19 @@ def asyncGoogleSearch(sourceName, cryptoName, numberOfResultsToCrawl):
 @app.route("/", methods=['GET'])
 def hello_world():
     return "<p>Hello, World!</p>"
+
+
+@app.route("/test", methods=['GET'])
+def test_db_conn():
+    connection = create_connection()
+    cursor = connection.cursor()
+
+    cursor.execute("SELECT * from coinmarket_id_map;")
+
+    # Fetch all rows from database
+    records = cursor.fetchall()
+    return str(records)
+
 
 @app.route('/crawl', methods=['GET'])
 def crawl():

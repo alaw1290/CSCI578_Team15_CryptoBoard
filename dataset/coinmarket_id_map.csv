@@ -1,6 +1,6 @@
-ID, Name, Symbol
+Coinmarket_ID, Name, Symbol
 1, "Bitcoin", "BTC"
-1, "Dogecoin", "DOGE"
-1, "Tether USDt", "USDT"
-1, "Ethereum", "ETH"
-1, "Solana", "SOL"
+74, "Dogecoin", "DOGE"
+825, "Tether USDt", "USDT"
+1027, "Ethereum", "ETH"
+5426, "Solana", "SOL"

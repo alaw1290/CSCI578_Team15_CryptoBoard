@@ -1,10 +1,31 @@
 CREATE TABLE coinmarket_id_map (
-    ID Int,
-    Name TEXT,
-    Symbol TEXT
+    Coinmarket_ID Int,
+    Name Text,
+    Symbol Text
 );
 
 COPY coinmarket_id_map
 FROM '/docker-entrypoint-initdb.d/coinmarket_id_map.csv'
+DELIMITER ','
+CSV HEADER;
+
+CREATE TABLE coinmarket_data (
+    id Text, 
+    coinmarket_id Int, 
+    name Text, 
+    symbol Text,
+    slug Text,
+    max_supply Bigint, 
+    circulating_supply Decimal, 
+    total_supply Decimal, 
+    infinite_supply Boolean, 
+    cmc_rank Bigint, 
+    USD_quote Decimal, 
+    USD_market_cap Decimal,
+    last_updated Text
+);
+
+COPY coinmarket_data
+FROM '/docker-entrypoint-initdb.d/coinmarket_data.csv'
 DELIMITER ','
 CSV HEADER;

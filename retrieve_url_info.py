@@ -64,20 +64,56 @@ def extract_summary_with_headings(soup):
     return heading or first_paragraph
 
 
+import json
+from bs4 import BeautifulSoup
+from dateutil import parser
+
+
 def extract_published_date(soup):
-    """Attempts to extract published date from various meta tags."""
-    possible_tags = [
-        "article:published_time", "og:published_time",
-        "datePublished", "publish_date", "pub_date", "date"
+    """Extract the published date from meta tags or JSON-LD."""
+    meta_date_selectors = [
+        {"name": "dc.date"},
+        {"name": "dcterms.created"},
+        {"name": "publishdate"},
+        {"property": "article:published_time"},
+        {"property": "og:published_time"},
+        {"property": "og:pubdate"},
+        {"name": "pubdate"},
     ]
-    for meta in soup.find_all("meta"):
-        if meta.get("property") in possible_tags or meta.get("name") in possible_tags:
-            date_str = meta.get("content")
-            if date_str:
-                try:
-                    return parser.parse(date_str)
-                except ValueError:
-                    continue
+
+    # Try to extract from meta tags
+    for selector in meta_date_selectors:
+        meta_tag = soup.find("meta", selector)
+        if meta_tag and meta_tag.get("content"):
+            try:
+                date = parser.parse(meta_tag.get("content"))
+                print(f"Published date found in meta tag {selector}: {date}")
+                return date
+            except (ValueError, TypeError):
+                continue
+
+    # Try to extract from JSON-LD (structured data)
+    for script in soup.find_all("script", type="application/ld+json"):
+        try:
+            data = json.loads(script.string)
+            if isinstance(data, dict):
+                if data.get("@type") == "NewsArticle" and data.get("datePublished"):
+                    date = parser.parse(data.get("datePublished"))
+                    print(f"Published date found in JSON-LD: {date}")
+                    return date
+
+                # Check nested JSON-LD structures
+                if "@graph" in data:
+                    for item in data["@graph"]:
+                        if item.get("@type") == "NewsArticle" and item.get("datePublished"):
+                            date = parser.parse(item.get("datePublished"))
+                            print(f"Published date found in nested JSON-LD: {date}")
+                            return date
+        except (json.JSONDecodeError, ValueError, TypeError):
+            continue
+
+    # If no date found
+    print("No published date found.")
     return None
 
 
@@ -136,51 +172,6 @@ def fetch_url_details(url):
     except requests.RequestException as e:
         print(f"Request error for URL {url}: {e}")
         return None, None, None
-
-
-# def fetch_url_details(url):
-#     """Retrieve title, published date, and summary from an HTML page."""
-#     try:
-#         # Request the page
-#         response = requests.get(url, headers={
-#             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
-#         })
-#         response.raise_for_status()
-#
-#         # Check if the content type is HTML
-#         if "text/html" not in response.headers["Content-Type"]:
-#             print(f"Skipping non-HTML URL: {url}")
-#             return None, None, None  # Skip non-HTML content
-#
-#         soup = BeautifulSoup(response.text, "html.parser")
-#
-#         # Extract the title
-#         title = soup.title.string if soup.title else None
-#
-#         # Extract the published date from meta tags (if available)
-#         published_date = None
-#         for meta in soup.find_all("meta"):
-#             if meta.get("property") in ["article:published_time", "og:published_time"]:
-#                 published_date = meta.get("content")
-#                 break
-#         if published_date:
-#             try:
-#                 published_date = datetime.fromisoformat(published_date)
-#             except ValueError:
-#                 published_date = None
-#
-#         # Extract summary based on the "summary:" keyword
-#         summary = None
-#         for p in soup.find_all("p"):
-#             if "summary:" in p.get_text().lower():
-#                 summary = p.get_text().split("summary:", 1)[1].strip()
-#                 break
-#
-#         return title, published_date, summary
-#
-#     except requests.RequestException as e:
-#         print(f"Request error for URL {url}: {e}")
-#         return None, None, None
 
 
 def update_url_info():

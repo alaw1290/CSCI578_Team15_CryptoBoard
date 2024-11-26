@@ -29,3 +29,19 @@ COPY coinmarket_data
 FROM '/docker-entrypoint-initdb.d/coinmarket_data.csv'
 DELIMITER ','
 CSV HEADER;
+
+CREATE TABLE stored_urls (
+    article_number Int,
+    crypto_name Text, 
+    source Text,
+    url Text,
+    id Int, 
+    title Text, 
+    published_date Text, 
+    summary Text
+);
+
+COPY stored_urls
+FROM '/docker-entrypoint-initdb.d/stored_urls.csv'
+DELIMITER ','
+CSV HEADER;

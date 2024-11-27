@@ -5,9 +5,7 @@ import requests, os, psycopg2
 
 from db_connector import create_connection
 
-
 app = Flask(__name__)
-# multi threading 
 executor = ThreadPoolExecutor(max_workers=5)
 
 def loadEnvFile(filepath):
@@ -16,6 +14,15 @@ def loadEnvFile(filepath):
             if line.strip() and not line.startswith('#'):
                 key, value = line.strip().split('=', 1)
                 os.environ[key] = value
+
+
+def is_html_url(href):
+    """Check if the URL is likely an HTML page."""
+    return (href.startswith("https://") and
+            "google.com" not in href and
+            "/search" not in href and
+            (href.endswith(".html") or href.endswith(".htm") or "/article" in href))
+
 
 def googleSearch(sourceName, cryptoName, numberOfResultsToCrawl):
     try:
@@ -47,7 +54,7 @@ def googleSearch(sourceName, cryptoName, numberOfResultsToCrawl):
         
         for item in soup.find_all('a', href=True):
             href = item['href']
-            if href.startswith("https://")  and "google.com" not in href and "/search" not in href:
+            if is_html_url(href):
                 if href not in uniqueLinks:
                     cursor.execute("SELECT 1 FROM STORED_URLS WHERE URL = %s;", (href,))
                     queryResults = cursor.fetchone()
@@ -63,6 +70,9 @@ def googleSearch(sourceName, cryptoName, numberOfResultsToCrawl):
                             print(f"An error occurred: {e}")
                 if len(links) >= numberOfResultsToCrawl:
                     break
+            else:
+                print(f"Skipped non-HTML URL: {href}")
+
         cursor.close()
         conn.close()
         return links[:numberOfResultsToCrawl]
@@ -109,9 +119,9 @@ def crawl():
         results = future.result()
         
         return jsonify({
-                "sourceName": sourceName,
-                "cryptoName": cryptoName,
-                "links": results
+            "sourceName": sourceName,
+            "cryptoName": cryptoName,
+            "links": results
         })
     except Exception as e:
         print(f"Unexpected error: {e}")

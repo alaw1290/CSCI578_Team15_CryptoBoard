@@ -32,7 +32,7 @@ def googleSearch(sourceName, cryptoName, numberOfResultsToCrawl):
         uniqueLinks = set() 
         links = []
         
-        loadEnvFile('.env')
+        loadEnvFile('../.env')
     
         conn = psycopg2.connect(
             dbname=os.getenv("DB_NAME"),

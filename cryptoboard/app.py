@@ -2,6 +2,8 @@ from flask import Flask, request, jsonify
 from bs4 import BeautifulSoup
 from concurrent.futures import ThreadPoolExecutor
 import requests, os, psycopg2
+import time
+import random
 
 from db_connector import create_connection
 
@@ -16,7 +18,7 @@ def loadEnvFile(filepath):
                 os.environ[key] = value
 
 
-def is_html_url(href):
+''''def is_html_url(href):
     """Check if the URL is likely an HTML page."""
     return (href.startswith("https://") and
             "google.com" not in href and
@@ -25,14 +27,21 @@ def is_html_url(href):
              href.endswith(".htm") or
              "/article" in href or
              "/news" in href or
-             "/story" in href))
+             "/story" in href))'''
 
 
 def googleSearch(sourceName, cryptoName, numberOfResultsToCrawl):
     try:
+        '''More than one user agent so the IP does not get blocked by google'''
+        user_agents = [
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
+            "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
+            "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
+            "Mozilla/5.0 (iPhone; CPU iPhone OS 14_6 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/14.0 Mobile/15E148 Safari/604.1"
+        ]
         query = f"site:{sourceName} {cryptoName}"
         headers = {
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
+            "User-Agent": random.choice(user_agents)
         }
         uniqueLinks = set()
         links = []
@@ -64,7 +73,8 @@ def googleSearch(sourceName, cryptoName, numberOfResultsToCrawl):
                 # HTML filtering criteria
                 if href.startswith("https://") and "google.com" not in href and "/search" not in href and (
                         href.endswith(".html") or href.endswith(
-                    ".htm") or "/article" in href or "/news" in href or "/story" in href
+                    ".htm") or "/article" in href or "/news" in href or "/story" or "/blog" in href or "/post" in href 
+                            or "/topic" in href or "/page" in href or href.split("/")[-1].isdigit()
                 ):
                     if href not in uniqueLinks:
                         # Check if URL already exists in the database
@@ -86,6 +96,9 @@ def googleSearch(sourceName, cryptoName, numberOfResultsToCrawl):
 
                 if len(links) >= numberOfResultsToCrawl:
                     break
+            
+            # replicate human waiting time and prevent from getting blocked
+            time.sleep(2)
 
             if len(links) >= numberOfResultsToCrawl:
                 break

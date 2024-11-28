@@ -2,6 +2,11 @@ from flask import Flask, request, jsonify
 from bs4 import BeautifulSoup
 from concurrent.futures import ThreadPoolExecutor
 import requests, os, psycopg2
+import nltk
+from nltk.sentiment.vader import SentimentIntensityAnalyzer
+from nltk.corpus import stopwords
+from nltk.tokenize import word_tokenize
+from nltk.stem import WordNetLemmatizer
 
 from db_connector import create_connection
 
@@ -76,6 +81,25 @@ def googleSearch(sourceName, cryptoName, numberOfResultsToCrawl):
 # Calling googleSearch function by different threads
 def asyncGoogleSearch(sourceName, cryptoName, numberOfResultsToCrawl):
     return executor.submit(googleSearch, sourceName, cryptoName, numberOfResultsToCrawl)
+
+def getSentimentOutput(summary):
+    # Need to download pre-trained models the first time you run this
+    #nltk.download('all')
+
+    # Tokenize the text
+    tokens = word_tokenize(summary.lower())
+    # Remove stop words
+    filtered_tokens = [token for token in tokens if token not in stopwords.words('english')]
+    # Lemmatize the tokens
+    lemmatizer = WordNetLemmatizer()
+    lemmatized_tokens = [lemmatizer.lemmatize(token) for token in filtered_tokens]
+    # Join the tokens back into a string
+    processed_text = ' '.join(lemmatized_tokens)
+    analyzer = SentimentIntensityAnalyzer()
+    scores = analyzer.polarity_scores(processed_text)
+    # Sentiment is 1 if positive, -1 if negative
+    sentiment = 1 if scores['pos'] > 0 else -1
+    return sentiment
 
 @app.route("/", methods=['GET'])
 def hello_world():

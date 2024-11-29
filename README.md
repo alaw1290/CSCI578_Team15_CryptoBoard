@@ -6,7 +6,6 @@ pip3 install requests
 pip3 install psycopg2
 pip3 install flask
 pip3 install bs4
-pip3 install nltk
 
 # 2. Create a .env file with the attributes below:
 
@@ -28,7 +27,6 @@ http://127.0.0.1:8000/crawl?sourceName=foxnews.com&cryptoName=Bitcoin&number=100
 
 Social Media:
 http://127.0.0.1:8000/crawl?sourceName=reddit.com&cryptoName=Bitcoin&number=100
-
 
 
 # Docker setup

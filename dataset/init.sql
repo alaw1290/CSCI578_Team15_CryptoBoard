@@ -31,7 +31,6 @@ DELIMITER ','
 CSV HEADER;
 
 CREATE TABLE stored_urls (
-    article_number Int,
     crypto_name Text, 
     source Text,
     url Text,

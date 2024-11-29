@@ -19,6 +19,7 @@ DB_SSLROOTCERT=/path/to/root.crt
 # 3. Run:
 
 python3 app.py
+http://127.0.0.1:8000/crawl?sourceName=nytimes.com&cryptoName=Bitcoin&number=30
 
 News Sources:
 http://127.0.0.1:8000/crawl?sourceName=cnn.com&cryptoName=Bitcoin&number=100
@@ -26,7 +27,6 @@ http://127.0.0.1:8000/crawl?sourceName=foxnews.com&cryptoName=Bitcoin&number=100
 
 Social Media:
 http://127.0.0.1:8000/crawl?sourceName=reddit.com&cryptoName=Bitcoin&number=100
-
 
 
 # Docker setup

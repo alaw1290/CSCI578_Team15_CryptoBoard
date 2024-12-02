@@ -20,4 +20,4 @@ RUN pip install -r requirements.txt
 # copy project
 COPY . /usr/src/cryptoboard/
 EXPOSE 8000
-CMD ["flask", "run"]
+CMD ["flask", "--debug", "run"]

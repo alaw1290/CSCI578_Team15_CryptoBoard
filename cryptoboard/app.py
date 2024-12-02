@@ -1,4 +1,5 @@
-from flask import Flask, request, jsonify
+import re
+from flask import Flask, request, jsonify, render_template
 from bs4 import BeautifulSoup
 from concurrent.futures import ThreadPoolExecutor
 import requests, os, psycopg2
@@ -10,8 +11,18 @@ from nltk.stem import WordNetLemmatizer
 
 from db_connector import create_connection
 
-app = Flask(__name__)
+
+# Need to download pre-trained models the first time you run this
+nltk.download('punkt')
+nltk.download('punkt_tab')
+nltk.download('stopwords')
+nltk.download('wordnet')
+nltk.download('vader_lexicon')
+
+app = Flask(__name__, template_folder='templates')
 executor = ThreadPoolExecutor(max_workers=5)
+
+app.logger.debug('Running cryptoboard')
 
 def loadEnvFile(filepath):
     with open(filepath, 'r') as file:
@@ -121,8 +132,6 @@ def asyncGoogleSearch(sourceName, cryptoName, numberOfResultsToCrawl):
     return executor.submit(googleSearch, sourceName, cryptoName, numberOfResultsToCrawl)
 
 def getSentimentOutput(summary):
-    # Need to download pre-trained models the first time you run this
-    #nltk.download('all')
 
     # Tokenize the text
     tokens = word_tokenize(summary.lower())
@@ -135,28 +144,113 @@ def getSentimentOutput(summary):
     processed_text = ' '.join(lemmatized_tokens)
     analyzer = SentimentIntensityAnalyzer()
     scores = analyzer.polarity_scores(processed_text)
-    # Sentiment is 1 if positive, -1 if negative
-    sentiment = 1 if scores['pos'] > 0 else -1
+    # Sentiment is 1 if more positive, -1 if more negative, else 0
+    if scores['pos'] > scores['neg']:
+        sentiment = 1
+    elif scores['pos'] < scores['neg']:
+        sentiment = -1
+    else:
+        sentiment = 0
     return sentiment
 
-@app.route("/", methods=['GET'])
-def hello_world():
-    return "<p>Hello, World!</p>"
+# runs query against database
+def query_database(query):
+    records = None
+    try:
+        connection = create_connection()
+        cursor = connection.cursor()
+        cursor.execute(query)
+        records = cursor.fetchall()
+    except Exception as e:
+        raise e
+    finally:
+        cursor.close()
+        connection.close()
+        return records
 
 
-@app.route("/test", methods=['GET'])
-def test_db_conn():
-    connection = create_connection()
-    cursor = connection.cursor()
+# get all available cryptos 
+@app.route("/available_cryptos", methods=['GET'])
+def all_cryptos():
+    records = query_database(f"SELECT * FROM coinmarket_id_map")
+    results = []
+    if records:
+        for record in records:
+            results.append({
+                'coinmarket_id': record[0],
+                'crypto_name': record[1],
+                'crypto_symbol': record[2]
+            })
 
-    # Fetch all rows from database
-    cursor.execute("SELECT * from coinmarket_id_map;")
-    records = cursor.fetchall()
+    return jsonify(results)
 
-    cursor.close()
-    connection.close()
+
+@app.route("/<crypto_id>/data", methods=['GET'])
+def get_crypto_data(crypto_id):
     
-    return str(records)
+    crypto_id = re.sub(r'\W+', '', crypto_id)
+
+    records = query_database(f"SELECT * FROM coinmarket_data WHERE coinmarket_id = {crypto_id}")
+
+    results = []
+    for record in records:
+        results.append({
+            'id': record[0],
+            'coinmarket_id': record[1],
+            'name': record[2],
+            'symbol': record[3],
+            'slug': record[4],
+            'max_supply': record[5],
+            'circulating_supply': record[6],
+            'total_supply': record[7],
+            'infinite_supply': record[8],
+            'cmc_rank': record[9],
+            'USD_quote': record[10],
+            'USD_market_cap': record[11],
+            'last_updated': record[12]
+        })
+
+    return jsonify(results)
+
+
+@app.route("/<crypto_id>/articles", methods=['GET'])
+def get_crypto_articles(crypto_id):
+    
+    crypto_id = re.sub(r'\W+', '', crypto_id)
+
+    records = query_database(f"SELECT name FROM coinmarket_id_map WHERE coinmarket_id = {crypto_id}")
+
+    crypto_name = records[0][0].strip()
+    records = query_database(f"SELECT * FROM stored_urls WHERE crypto_name = '{crypto_name}'")
+
+
+    results = []
+    for record in records:
+        results.append({
+            'crypto_name': record[0],
+            'source': record[1],
+            'url': record[2],
+            'id': record[3],
+            'title': record[4],
+            'published_date': record[5],
+            'summary': record[6]
+        })
+
+    return jsonify(results)
+
+
+
+@app.route("/sentiment", methods=['POST'])
+def calculate_sentiment():
+    request_data = request.get_json()
+    text = request_data.get('text')
+    results = getSentimentOutput(text)
+    return jsonify(results)
+
+
+@app.route("/", methods=['GET'])
+def hello_world(name='User'):
+    return render_template('hello.html', person=name)
 
 
 @app.route('/crawl', methods=['GET'])

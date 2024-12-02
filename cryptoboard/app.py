@@ -2,7 +2,7 @@ from flask import Flask, request, jsonify
 from bs4 import BeautifulSoup
 from concurrent.futures import ThreadPoolExecutor
 import requests, os, psycopg2
-import nltk
+import nltk, time, random
 from nltk.sentiment.vader import SentimentIntensityAnalyzer
 from nltk.corpus import stopwords
 from nltk.tokenize import word_tokenize

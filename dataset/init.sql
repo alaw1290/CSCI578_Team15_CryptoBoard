@@ -44,3 +44,14 @@ COPY stored_urls
 FROM '/docker-entrypoint-initdb.d/stored_urls.csv'
 DELIMITER ','
 CSV HEADER;
+
+
+CREATE TABLE stored_urls_sentiment (
+    id Int, 
+    sentiment Int
+);
+
+COPY stored_urls_sentiment
+FROM '/docker-entrypoint-initdb.d/stored_urls_sentiment.csv'
+DELIMITER ','
+CSV HEADER;

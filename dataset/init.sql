@@ -41,7 +41,7 @@ CREATE TABLE stored_urls (
     url Text,
     id Int, 
     title Text, 
-    published_date Text, 
+    published_date timestamp, 
     summary Text
 );
 

@@ -1,4 +1,5 @@
 import os
+import csv
 from datetime import date
 import hashlib
 
@@ -7,17 +8,24 @@ from requests import Request, Session
 from requests.exceptions import ConnectionError, Timeout, TooManyRedirects
 import json
 
-API_KEY = os.getenv('COINMARKETAPI_KEY', '')
+API_KEY = os.getenv('COINMARKETAPI_KEY', 'd0ce5ae6-6405-46f0-9c74-e1459679f8b7')
 
 """
-{'id': 1, 'rank': 1, 'name': 'Bitcoin', 'symbol': 'BTC', 'slug': 'bitcoin', 'is_active': 1, 'status': 1, 'first_historical_data': '2010-07-13T00:05:00.000Z', 'last_historical_data': '2024-11-20T04:00:00.000Z', 'platform': None}
-{'id': 74, 'rank': 7, 'name': 'Dogecoin', 'symbol': 'DOGE', 'slug': 'dogecoin', 'is_active': 1, 'status': 1, 'first_historical_data': '2013-12-15T14:40:00.000Z', 'last_historical_data': '2024-11-20T04:00:00.000Z', 'platform': None}
+{'id': 1, 'name': 'Bitcoin', 'symbol': 'BTC', 'slug': 'bitcoin', 'is_active': 1, 'status': 1, 'first_historical_data': '2010-07-13T00:05:00.000Z', 'last_historical_data': '2024-11-20T04:00:00.000Z', 'platform': None}
+{'id': 74, 'name': 'Dogecoin', 'symbol': 'DOGE', 'slug': 'dogecoin', 'is_active': 1, 'status': 1, 'first_historical_data': '2013-12-15T14:40:00.000Z', 'last_historical_data': '2024-11-20T04:00:00.000Z', 'platform': None}
 {'id': 825, 'rank': 3, 'name': 'Tether USDt', 'symbol': 'USDT', 'slug': 'tether', 'is_active': 1, 'status': 1, 'first_historical_data': '2015-02-25T13:30:00.000Z', 'last_historical_data': '2024-11-20T04:00:00.000Z', 'platform': {'id': 1, 'name': 'Ethereum', 'symbol': 'ETH', 'slug': 'ethereum', 'token_address': '0xdac17f958d2ee523a2206206994597c13d831ec7'}}
 {'id': 1027, 'rank': 2, 'name': 'Ethereum', 'symbol': 'ETH', 'slug': 'ethereum', 'is_active': 1, 'status': 1, 'first_historical_data': '2015-08-07T14:45:00.000Z', 'last_historical_data': '2024-11-20T04:00:00.000Z', 'platform': None}
 {'id': 5426, 'rank': 4, 'name': 'Solana', 'symbol': 'SOL', 'slug': 'solana', 'is_active': 1, 'status': 1, 'first_historical_data': '2020-04-10T04:55:00.000Z', 'last_historical_data': '2024-11-20T04:00:00.000Z', 'platform': None}
 """
+coinid_map = {
+	'1': {'name': 'Bitcoin', 'symbol': 'BTC', 'slug': 'bitcoin', 'max_supply': '21000000', 'infinite_supply': 'False'},
+	'74': {'name': 'Dogecoin', 'symbol': 'DOGE', 'slug': 'dogecoin', 'max_supply': '-1', 'infinite_supply': 'True'},
+	'825': {'name': 'Tether', 'symbol': 'USDT', 'slug': 'tether',  'max_supply': '-1', 'infinite_supply': 'True'},
+	'1027': {'name': 'Ethereum', 'symbol': 'ETH', 'slug': 'ethereum', 'max_supply': '-1', 'infinite_supply': 'True'},
+	'5426': {'name': 'Solana', 'symbol': 'SOL', 'slug': 'solana', 'max_supply': '-1', 'infinite_supply': 'True'}
+}
 
-def pull_latest_quote_data(id: int):
+def pull_historical_data(id: int, count = 1):
 	"""
 	Returns a JSON representing latest coinmarket api quote data from quote endpoint on the specified ID value. 
 	JSON is structured with the following keys:
@@ -37,10 +45,12 @@ def pull_latest_quote_data(id: int):
 		}
 	}
 	"""
-	url = 'https://pro-api.coinmarketcap.com/v2/cryptocurrency/quotes/latest'
+	url = 'https://pro-api.coinmarketcap.com/v2/cryptocurrency/quotes/historical'
 	parameters = {
 		'id':f'{str(id)}',
-		'aux': 'cmc_rank,max_supply,circulating_supply,total_supply'
+		'interval': '1h',
+		'count': f'{str(count)}'
+
 	}
 	headers = {
 		'Accepts': 'application/json',
@@ -53,30 +63,43 @@ def pull_latest_quote_data(id: int):
 		response = session.get(url, params=parameters)
 	except (ConnectionError, Timeout, TooManyRedirects) as e:
 		print(e)
-		raise 
+		raise e
+	info = coinid_map[str(id)]
+	response_json = json.loads(response.text)['data']['quotes']
 
-	response_json = json.loads(response.text)['data'][str(id)]
+	data = []
+	for quote in response_json:
+		data.append({
+			"coinmarket_id": str(id),
+			"name": info['name'], 
+			"symbol": info['symbol'], 
+			"slug": info['slug'], 
+			"max_supply": info['max_supply'], 
+			"infinite_supply": info['infinite_supply'],
+			"price": quote['quote']['USD']['price'],
+			"market_cap": quote['quote']['USD']['market_cap'],
+			"total_supply": quote['quote']['USD']['total_supply'], 
+			"volume_24h": quote['quote']['USD']['volume_24h'], 
+			"percent_change_1h": quote['quote']['USD']['percent_change_1h'], 
+			"percent_change_24h": quote['quote']['USD']['percent_change_24h'], 
+			"percent_change_7d": quote['quote']['USD']['percent_change_7d'], 
+			"percent_change_30d": quote['quote']['USD']['percent_change_30d'], 
+			"circulating_supply": quote['quote']['USD']['circulating_supply'],
+			"timestamp": quote['quote']['USD']['timestamp']
+		})
 
-
-	data = {
-		"data": {
-			"name": response_json['name'], 
-			"symbol": response_json['symbol'], 
-			"slug": response_json['slug'], 
-			"max_supply": -1 if response_json['max_supply'] is None else response_json['max_supply'], 
-			"circulating_supply": response_json['circulating_supply'], 
-			"total_supply": response_json['total_supply'], 
-			"infinite_supply": response_json['infinite_supply'], 
-			"cmc_rank": response_json["cmc_rank"], 
-			"USD_quote": response_json['quote']['USD']['price'], 
-			"USD_market_cap": response_json['quote']['USD']['market_cap'], 
-			"last_updated": response_json['last_updated']
-		}
-	}
-	# data = {'data': {'name': 'Bitcoin', 'symbol': 'BTC', 'slug': 'bitcoin', 'max_supply': 21000000, 'circulating_supply': 19786525, 'total_supply': 19786525, 'infinite_supply': False, 'cmc_rank': 1, 'USD_quote': 98375.43008370513, 'USD_market_cap': 1946507906736.9836, 'last_updated': '2024-11-24T02:06:00.000Z'}}
 	return data
 
+def write_out_csv():
+	all_data = []
+	for id_val in [1, 74, 825, 1027, 5426]:
+		all_data += pull_historical_data(id_val, count=504)
+	with open('coinmarket_data.csv', 'w') as file:
+		datawriter = csv.writer(file, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
+		datawriter.writerow(['coinmarket_id', 'name', 'symbol', 'slug', 'max_supply', 'infinite_supply', 'price', 'market_cap', 'total_supply', 'volume_24h', 'percent_change_1h', 'percent_change_24h', 'percent_change_7d', 'percent_change_30d', 'circulating_supply', 'timestamp'])
+		for row in all_data:
+			datawriter.writerow([row['coinmarket_id'], row['name'], row['symbol'], row['slug'], row['max_supply'], row['infinite_supply'], row['price'], row['market_cap'], row['total_supply'], row['volume_24h'], row['percent_change_1h'], row['percent_change_24h'], row['percent_change_7d'], row['percent_change_30d'], row['circulating_supply'], row['timestamp']])
 
 if __name__ == '__main__':
-	print(pull_latest_quote_data(74))
+	write_out_csv()
 

@@ -1,3 +1,5 @@
+SET DateStyle TO ISO;
+
 CREATE TABLE coinmarket_id_map (
     Coinmarket_ID Int,
     Name Text,
@@ -10,19 +12,22 @@ DELIMITER ','
 CSV HEADER;
 
 CREATE TABLE coinmarket_data (
-    id Text, 
     coinmarket_id Int, 
     name Text, 
     symbol Text,
     slug Text,
     max_supply Bigint, 
-    circulating_supply Decimal, 
-    total_supply Decimal, 
     infinite_supply Boolean, 
-    cmc_rank Bigint, 
-    USD_quote Decimal, 
-    USD_market_cap Decimal,
-    last_updated Text
+    price Decimal, 
+    market_cap Decimal, 
+    total_supply Decimal, 
+    volume_24h Decimal, 
+    percent_change_1h Decimal,
+    percent_change_24h Decimal,
+    percent_change_7d Decimal,
+    percent_change_30d Decimal,
+    circulating_supply Decimal,
+    data_timestamp timestamp
 );
 
 COPY coinmarket_data

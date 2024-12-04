@@ -41,6 +41,8 @@ Run `docker compose up --build` to start the flask app and postgres database. By
 
 `/{crypto_id}/data`: GET returns all coinmarket data from database on specified crypto id
 
+`<crypto_id>/prediction`: GET returns prediction on price with varying windows (1h, 12h, 1d, 7d)
+
 `/{crypto_id}/articles`: GET returns all articles along with associated sentiment from database on specified crypto_id
 
 `/sentiment`: POST returns sentiment on provided text, i.e.: `curl -d '{"text":"This is an example text."}' -H "Content-Type: application/json" -X POST http://localhost:8000/sentiment`

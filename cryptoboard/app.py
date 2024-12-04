@@ -227,7 +227,7 @@ def get_crypto_articles(crypto_id):
     
     crypto_id = re.sub(r'\W+', '', crypto_id)
 
-    records = query_database(f"SELECT name FROM coinmarket_id_map WHERE coinmarket_id = {crypto_id}")
+    records = query_database(f"SELECT name FROM coinmarket_id_map WHERE coinmarket_id = {crypto_id} AND published_date IS NOT NULL")
 
     crypto_name = records[0][0].strip()
     records = query_database(f"SELECT U.*, S.sentiment FROM stored_urls U INNER JOIN stored_urls_sentiment S on U.id = S.id WHERE crypto_name = '{crypto_name}' ORDER BY U.published_date DESC")

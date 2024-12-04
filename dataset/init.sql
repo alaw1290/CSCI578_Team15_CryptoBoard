@@ -39,7 +39,7 @@ CREATE TABLE stored_urls (
     crypto_name Text, 
     source Text,
     url Text,
-    id Int, 
+    id Text, 
     title Text, 
     published_date timestamp, 
     summary Text

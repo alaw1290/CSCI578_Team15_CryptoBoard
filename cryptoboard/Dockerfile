@@ -9,8 +9,7 @@ ENV FLASK_APP=app.py
 ENV FLASK_RUN_HOST=0.0.0.0
 ENV FLASK_RUN_PORT=8000
 
-RUN apk update && apk add postgresql-dev gcc python3-dev musl-dev
-RUN apk add --virtual build-dependencies
+RUN apk update && apk add postgresql-dev gcc python3-dev musl-dev py3-scikit-learn
 
 # install dependencies
 RUN pip install --upgrade pip

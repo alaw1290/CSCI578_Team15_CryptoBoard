@@ -190,7 +190,7 @@ def get_crypto_data(crypto_id):
     
     crypto_id = re.sub(r'\W+', '', crypto_id)
 
-    records = query_database(f"SELECT * FROM coinmarket_data WHERE coinmarket_id = {crypto_id}")
+    records = query_database(f"SELECT * FROM coinmarket_data WHERE coinmarket_id = {crypto_id} ORDER BY data_timestamp DESC")
 
     results = []
     for record in records:
@@ -212,6 +212,15 @@ def get_crypto_data(crypto_id):
 
     return jsonify(results)
 
+@app.route("/<crypto_id>/prediction", methods=['GET'])
+def predict_future_value(crypto_id):
+    results = {
+        '1h_prediction': 1234.5,
+        '12h_prediction': 12345.6,
+        '24h_prediction': 123456.7,
+        '7d_prediction': 1234567.8
+    }
+    return jsonify(results)
 
 @app.route("/<crypto_id>/articles", methods=['GET'])
 def get_crypto_articles(crypto_id):
@@ -221,7 +230,7 @@ def get_crypto_articles(crypto_id):
     records = query_database(f"SELECT name FROM coinmarket_id_map WHERE coinmarket_id = {crypto_id}")
 
     crypto_name = records[0][0].strip()
-    records = query_database(f"SELECT U.*, S.sentiment FROM stored_urls U INNER JOIN stored_urls_sentiment S on U.id = S.id WHERE crypto_name = '{crypto_name}'")
+    records = query_database(f"SELECT U.*, S.sentiment FROM stored_urls U INNER JOIN stored_urls_sentiment S on U.id = S.id WHERE crypto_name = '{crypto_name}' ORDER BY U.published_date DESC")
 
 
     results = []

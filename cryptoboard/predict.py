@@ -10,11 +10,11 @@ def load_from_database():
     load_dotenv()
 
     # Database connection parameters from environment variables
-    DB_NAME = os.getenv('DB_NAME')
-    DB_USER = os.getenv('DB_USER')
-    DB_PASSWORD = os.getenv('DB_PASSWORD')
-    DB_HOST = os.getenv('DB_HOST')
-    DB_PORT = 5432  # Default PostgreSQL port
+    DB_NAME = os.getenv('POSTGRES_DB_NAME')
+    DB_USER = os.getenv('POSTGRES_USER')
+    DB_PASSWORD = os.getenv('POSTGRES_PASSWORD')
+    DB_HOST = os.getenv('POSTGRES_DB_HOST')
+    DB_PORT = os.getenv('POSTGRES_DB_PORT', 5432)  # Default PostgreSQL port
 
     # Connect to the PostgreSQL database
     conn = psycopg2.connect(
@@ -27,10 +27,9 @@ def load_from_database():
 
     # Query to retrieve data
     query = """
-    SELECT last_updated, USD_quote
+    SELECT data_timestamp as timestamp, price
     FROM coinmarket_data
-    WHERE name = 'Bitcoin'
-    ORDER BY last_updated
+    ORDER BY data_timestamp desc
     """
 
     # Load data into a pandas DataFrame
@@ -64,23 +63,23 @@ def predict_price(df, symbol):
     df = df[df['symbol'].str.strip() == symbol].copy()
 
     # Check if required columns exist
-    if 'last_updated' not in df.columns or 'USD_quote' not in df.columns:
-        raise KeyError("The required columns 'last_updated' or 'USD_quote' are not present in the data.")
+    if 'timestamp' not in df.columns or 'price' not in df.columns:
+        raise KeyError("The required columns 'timestamp' or 'price' are not present in the data.")
 
     # Convert last_updated to datetime and extract features
-    df['last_updated'] = pd.to_datetime(df['last_updated'])
-    df['timestamp'] = df['last_updated'].apply(lambda x: x.timestamp())
+    df['timestamp'] = pd.to_datetime(df['timestamp'])
+    df['timestamp'] = df['timestamp'].apply(lambda x: x.timestamp())
     
     # Prepare the data for the model
     X = df[['timestamp']]
-    y = df['USD_quote']
+    y = df['price']
 
     # Train a simple linear regression model
     model = LinearRegression()
     model.fit(X, y)
 
     # Predict future prices
-    future_dates = pd.date_range(start=df['last_updated'].max(), periods=30, freq='D')
+    future_dates = pd.date_range(start=df['timestamp'].max(), periods=30, freq='D')
     future_timestamps = pd.DataFrame(future_dates.map(lambda x: x.timestamp()), columns=['timestamp'])
     predictions = model.predict(future_timestamps)
 

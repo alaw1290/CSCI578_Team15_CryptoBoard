@@ -2,7 +2,7 @@ import requests
 
 BASE_URL = "http://127.0.0.1:8000/crawl"
 
-cryptos = ["Tether", "Ethereum", "Solana", "Dogecoin"]
+cryptos = ["Tether", "Ethereum", "Solana", "Dogecoin", "Bitcoin"]
 sources = ["cnn.com", "foxnews.com", "reddit.com"]
 number_of_results = 100
 

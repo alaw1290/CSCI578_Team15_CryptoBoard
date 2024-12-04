@@ -52,7 +52,7 @@ CSV HEADER;
 
 
 CREATE TABLE stored_urls_sentiment (
-    id Int, 
+    id Text, 
     sentiment Int
 );
 

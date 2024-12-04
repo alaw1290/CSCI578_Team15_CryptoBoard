@@ -1,4 +1,5 @@
 import re
+import joblib
 from flask import Flask, request, jsonify, render_template
 from bs4 import BeautifulSoup
 from concurrent.futures import ThreadPoolExecutor
@@ -191,34 +192,47 @@ def get_crypto_data(crypto_id):
     crypto_id = re.sub(r'\W+', '', crypto_id)
 
     records = query_database(f"SELECT * FROM coinmarket_data WHERE coinmarket_id = {crypto_id} ORDER BY data_timestamp DESC")
-
     results = []
     for record in records:
         results.append({
-            'id': record[0],
-            'coinmarket_id': record[1],
-            'name': record[2],
-            'symbol': record[3],
-            'slug': record[4],
-            'max_supply': record[5],
-            'circulating_supply': record[6],
-            'total_supply': record[7],
-            'infinite_supply': record[8],
-            'cmc_rank': record[9],
-            'USD_quote': record[10],
-            'USD_market_cap': record[11],
-            'last_updated': record[12]
+            'coinmarket_id': record[0],
+            'name': record[1],
+            'symbol': record[2],
+            'slug': record[3],
+            'max_supply': record[4],
+            'infinite_supply': record[5],
+            'price': record[6],
+            'market_cap': record[7],
+            'total_supply': record[8],
+            'volume_24h': record[9],
+            'percent_change_1h': record[10],
+            'percent_change_24h': record[11],
+            'percent_change_7d': record[12],
+            'percent_change_30d': record[13],
+            'circulating_supply': record[14],
+            'timestamp': record[15].timestamp()
         })
 
     return jsonify(results)
 
 @app.route("/<crypto_id>/prediction", methods=['GET'])
 def predict_future_value(crypto_id):
+    crypto_id = re.sub(r'\W+', '', crypto_id)
+
+    records = query_database(f"SELECT max(data_timestamp) FROM coinmarket_data WHERE coinmarket_id = {crypto_id}")
+    max_timestamp = records[0][0].timestamp()
+
+    with open(f'models/{crypto_id}_model.pkl', 'rb') as f:
+        model = joblib.load(f)
+
+    prediction_ranges = [[max_timestamp + offset] for offset in [3600, 43200, 86400, 604800]]
+    prediction_results = model.predict(prediction_ranges)
+
     results = {
-        '1h_prediction': 1234.5,
-        '12h_prediction': 12345.6,
-        '24h_prediction': 123456.7,
-        '7d_prediction': 1234567.8
+        '1h_prediction': prediction_results[0],
+        '12h_prediction': prediction_results[1],
+        '24h_prediction': prediction_results[2],
+        '7d_prediction': prediction_results[3]
     }
     return jsonify(results)
 
@@ -227,7 +241,7 @@ def get_crypto_articles(crypto_id):
     
     crypto_id = re.sub(r'\W+', '', crypto_id)
 
-    records = query_database(f"SELECT name FROM coinmarket_id_map WHERE coinmarket_id = {crypto_id} AND published_date IS NOT NULL")
+    records = query_database(f"SELECT name FROM coinmarket_id_map WHERE coinmarket_id = {crypto_id}")
 
     crypto_name = records[0][0].strip()
     records = query_database(f"SELECT U.*, S.sentiment FROM stored_urls U INNER JOIN stored_urls_sentiment S on U.id = S.id WHERE crypto_name = '{crypto_name}' ORDER BY U.published_date DESC")
@@ -241,7 +255,7 @@ def get_crypto_articles(crypto_id):
             'url': record[2],
             'id': record[3],
             'title': record[4],
-            'published_date': record[5],
+            'published_date': record[5].timestamp() if record[5] else -1,
             'summary': record[6],
             'sentiment': record[7]
         })

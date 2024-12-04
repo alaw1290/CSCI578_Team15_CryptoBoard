@@ -1,5 +1,6 @@
 # syntax=docker/dockerfile:1
-FROM python:alpine3.13
+# FROM python:alpine3.13
+FROM python:3.10-slim-buster
 
 # set work directory
 WORKDIR /usr/src/cryptoboard
@@ -9,7 +10,8 @@ ENV FLASK_APP=app.py
 ENV FLASK_RUN_HOST=0.0.0.0
 ENV FLASK_RUN_PORT=8000
 
-RUN apk update && apk add postgresql-dev gcc python3-dev musl-dev py3-scikit-learn
+RUN apt-get update
+RUN apt-get install -y build-essential libpq-dev
 
 # install dependencies
 RUN pip install --upgrade pip

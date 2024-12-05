@@ -25,7 +25,8 @@ const CryptoPriceChart: React.FC<CryptoPriceChartProps> = ({ data }) => {
       ...item,
       formattedTimestamp: new Date(item.timestamp * 1000).toLocaleString(),
       price: parseFloat(item.price),
-    }));
+    }))
+    .reverse();
 
   const getCryptoName = () => {
     if (data.length > 0) {

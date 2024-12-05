@@ -1,12 +1,12 @@
-version: '3.8'
+version: "3.8"
 
 services:
   cryptoboard:
     build:
-      context: ./cryptoboard
+      context: .
       dockerfile: Dockerfile
     environment:
-      DEBUG: 'False'
+      DEBUG: "False"
       POSTGRES_DB_NAME: db
       POSTGRES_DB_HOST: db
       POSTGRES_DB_PORT: 5432

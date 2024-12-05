@@ -1,6 +1,7 @@
 import re
 import joblib
 from flask import Flask, request, jsonify, send_from_directory
+from flask_cors import CORS
 from bs4 import BeautifulSoup
 from concurrent.futures import ThreadPoolExecutor
 import requests, os, psycopg2
@@ -22,6 +23,7 @@ nltk.download('wordnet')
 nltk.download('vader_lexicon')
 
 app = Flask(__name__, static_folder='frontend/dist')
+CORS(app)
 executor = ThreadPoolExecutor(max_workers=5)
 
 app.logger.debug('Running cryptoboard')
@@ -305,6 +307,6 @@ def crawl():
         return {"error": "Unexpected error in crawling scope"}
 
 if __name__ == '__main__':
-    app.run(port=8000, debug=True, threaded=True)
+    app.run(host='0.0.0.0', port=8000, debug=True, threaded=True)
     # Example request:
     # http://127.0.0.1:8000/crawl?sourceName=nytimes.com&cryptoName=Bitcoin&number=30

@@ -1,0 +1,6 @@
+{
+  "dependencies": {
+    "devextreme": "24.1.7",
+    "devextreme-react": "24.1.7"
+  }
+}

@@ -1,6 +1,6 @@
 import re
 import joblib
-from flask import Flask, request, jsonify, render_template
+from flask import Flask, request, jsonify, send_from_directory
 from bs4 import BeautifulSoup
 from concurrent.futures import ThreadPoolExecutor
 import requests, os, psycopg2
@@ -21,7 +21,7 @@ nltk.download('stopwords')
 nltk.download('wordnet')
 nltk.download('vader_lexicon')
 
-app = Flask(__name__, template_folder='templates')
+app = Flask(__name__, static_folder='frontend/dist')
 executor = ThreadPoolExecutor(max_workers=5)
 
 app.logger.debug('Running cryptoboard')
@@ -273,9 +273,15 @@ def calculate_sentiment():
     return jsonify(results)
 
 
-@app.route("/", methods=['GET'])
-def hello_world(name='User'):
-    return render_template('hello.html', person=name)
+@app.route('/', defaults={'path': ''})
+@app.route('/<path:path>')
+def serve(path):
+    if path != "" and os.path.exists(os.path.join(app.static_folder, path)):
+        # If the requested file exists, serve it directly
+        return send_from_directory(app.static_folder, path)
+    else:
+        # For all other routes, serve index.html
+        return send_from_directory(app.static_folder, 'index.html')
 
 
 @app.route('/crawl', methods=['GET'])

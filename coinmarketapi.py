@@ -8,7 +8,7 @@ from requests import Request, Session
 from requests.exceptions import ConnectionError, Timeout, TooManyRedirects
 import json
 
-API_KEY = os.getenv('COINMARKETAPI_KEY', 'd0ce5ae6-6405-46f0-9c74-e1459679f8b7')
+API_KEY = os.getenv('COINMARKETAPI_KEY', '')
 
 """
 {'id': 1, 'name': 'Bitcoin', 'symbol': 'BTC', 'slug': 'bitcoin', 'is_active': 1, 'status': 1, 'first_historical_data': '2010-07-13T00:05:00.000Z', 'last_historical_data': '2024-11-20T04:00:00.000Z', 'platform': None}
